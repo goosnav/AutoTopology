@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/storage/path_manager.py
+# hypothesis_version: 6.151.9
+
+['.', '[^\\w\\-.]', '_', 'cache', 'checkpoints', 'db', 'exports', 'logs', 'storage', 'unnamed']

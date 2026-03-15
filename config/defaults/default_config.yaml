@@ -1,0 +1,77 @@
+# AutoTopology Default Configuration
+# Target: table_family on 16GB Mac
+
+app:
+  app_name: AutoTopology
+  project_root: "."
+  models_path: "models"
+  active_model: "moondream2"
+
+families:
+  allowed_families:
+    - table_family
+
+geometry:
+  build_volume:
+    x: 300
+    y: 300
+    z: 400
+  bounds:
+    min_width: 100
+    max_width: 2000
+    min_depth: 100
+    max_depth: 2000
+    min_height: 50
+    max_height: 2500
+  material_default: "wood"
+
+ea:
+  population_count: 50
+  islands_per_league: 3
+  league_count: 2
+  candidates_per_generation: 20
+  review_every_n_generations: 5
+  top_k_selection_count: 5
+  pairwise_tiebreak_count: 3
+  migration_rate: 0.1
+  migration_interval: 3
+  tournament_size: 3
+  mutation_rate: 0.3
+  crossover_rate: 0.7
+
+scoring:
+  physics_gate_threshold: 0.3
+  aesthetic_weight: 0.4
+  physics_weight: 0.3
+  novelty_weight: 0.2
+  taste_weight: 0.1
+
+vlm:
+  n_ctx: 512
+  n_gpu_layers: 0
+  temperature: 0.1
+  max_retries: 2
+  failure_rate_threshold: 0.5
+  fallback_mode: "physics_only"
+
+taste:
+  enabled: false
+  model_type: "logistic_regression"
+  retrain_every_n_reviews: 1
+
+cache:
+  keep_last_n_generations: 3
+  max_cache_size_mb: 2000
+
+export:
+  export_top_n_on_stop: 10
+  formats:
+    - stl
+  include_metadata: true
+  include_collage: true
+
+logging:
+  log_level: "INFO"
+  log_dir: "storage/logs"
+  rotate_size_mb: 10
+  retention_days: 30

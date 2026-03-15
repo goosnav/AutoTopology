@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/app/api/main.py
+# hypothesis_version: 6.151.9
+
+['*', '/health', '/static', 'app_name', 'ok', 'static', 'status', 'ui_assets', 'version']

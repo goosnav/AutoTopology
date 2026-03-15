@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autotopology"
+version = "0.1.0"
+description = "Evolutionary furniture generator with AI aesthetic scoring"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = [
+    # Core / API
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "typer>=0.9.0",
+    "loguru>=0.7.0",
+    "pyyaml>=6.0",
+    # Geometry / Numeric
+    "numpy>=1.26.0",
+    "scipy>=1.11.0",
+    "trimesh>=4.0.0",
+    "networkx>=3.2.0",
+    "shapely>=2.0.0",
+    "pillow>=10.0.0",
+    # Rendering
+    "pyrender>=0.1.45",
+    # ML / VLM
+    "llama-cpp-python>=0.2.0",
+    "scikit-learn>=1.3.0",
+    # Utils
+    "psutil>=5.9.0",
+    "httpx>=0.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-xdist>=3.5.0",
+    "hypothesis>=6.90.0",
+    "mypy>=1.7.0",
+    "ruff>=0.1.0",
+    "pybind11>=2.11.0",
+]
+cpp = [
+    "pybind11>=2.11.0",
+    "scikit-build-core>=0.8.0",
+]
+
+[project.scripts]
+autotopology = "run:main"
+autotopology-cli = "dev_cli:app"
+
+[tool.setuptools.packages.find]
+include = ["app*", "core*", "geometry*", "physics*", "vision*", "preference*", "storage*", "config*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
