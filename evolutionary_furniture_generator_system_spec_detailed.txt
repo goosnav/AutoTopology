@@ -1,0 +1,1719 @@
+EVOLUTIONARY FURNITURE GENERATOR - FULL SYSTEM SPECIFICATION
+INTERNAL TOOL SPEC / BUILD-READY REQUIREMENTS / PLAIN TEXT EDITION
+
+====================================================================
+0. DOCUMENT PURPOSE
+====================================================================
+
+This document defines the full technical specification for a local desktop application that generates furniture and product-form concepts using an evolutionary algorithm, geometric constraints, physics-based screening, image-based aesthetic scoring, and optional human taste reinforcement. The application is intended to be a robust local tool first. It must work reliably on macOS, Windows, and Linux, run from a packaged launcher, and support local model files through Python only. It is not a cloud app. It is not a CAD platform. It is a local evolutionary design engine with a gallery-driven user loop.
+
+The system must generate plausible, printable, constraint-compliant forms for selected furniture families. The goal is not polished production CAD. The goal is form discovery, massing discovery, support topology discovery, and inspirational or prototype-grade design output. The generated outputs must be structurally plausible at a coarse level, exportable as STL, and subject to hard geometry sanity checks.
+
+A developer should be able to build the system directly from this specification without needing additional architectural interpretation.
+
+====================================================================
+1. PRODUCT DEFINITION
+====================================================================
+
+1.1 Product Name
+
+Working name:
+Evolutionary Furniture Generator
+
+1.2 Core Product Statement
+
+The application lets a user define a product family, dimensional bounds, structural preferences, material assumptions, and basic topology parameters. The application then runs a multi-population evolutionary search which generates candidate geometries, validates them, renders them from four views, scores them with a local vision-language model and physics heuristics, and periodically pauses for the user to select favorites. The system continues evolving until the user stops it. Final outputs include printable meshes, render collages, full genome/state metadata, and score reports.
+
+1.3 Supported V1 Families
+
+V1 must support the following families:
+
+- table_family
+  Includes dining_table, coffee_table, side_table, console_table, desk, column-table or pedestal-table variants.
+
+- lamp_family
+  Includes table_lamp and floor_lamp.
+
+- chair_family_lite
+  Includes dining_chair, stool, simple armchair-like forms, and bench variants where applicable.
+
+1.4 Explicit V1 Design Intent
+
+The system is intended to discover:
+
+- overall silhouette
+- support topology
+- mass distribution
+- seat and back relationship for chair-like objects
+- lamp body / base / stem / head composition
+- table top / support / leg / stretcher composition
+- unusual but bounded variants such as 3-leg, 4-leg, 5-leg, multi-support, central-pedestal, block-like, asymmetric, or sculptural support structures
+
+The system is not intended to perform:
+
+- detailed joinery design
+- full ergonomic optimization
+- exact fabrication drawing generation
+- high-end photoreal rendering
+- automatic CAD history tree authoring
+- production-ready BOM generation
+
+====================================================================
+2. NON-GOALS
+====================================================================
+
+The following are out of scope for V1 and must not be built into core architecture assumptions:
+
+- cloud execution
+- distributed compute cluster orchestration
+- SaaS multi-user infrastructure
+- account system
+- cloud licensing system
+- true continuum topology optimization
+- generalized STEP-first CAD workflow
+- arbitrary user scripting inside the app
+- automatic splitting of large models into printable sub-parts
+- automatic rescaling of invalid geometry to force build-volume compliance
+- detailed upholstery modeling
+- detailed ergonomic anthropometric fitting
+- animation authoring
+- photorealistic renderer integration
+- full FEA across all candidates
+
+====================================================================
+3. HIGH-LEVEL SYSTEM REQUIREMENTS
+====================================================================
+
+3.1 Operating Modes
+
+The application must support:
+
+- new project creation
+- project resume from checkpoint
+- evolution run / pause / stop
+- gallery review mode
+- export selected candidate mode
+- batch export of top candidates
+- debug/test mode for each subsystem independently
+
+3.2 Core Functional Requirements
+
+The application must:
+
+- run locally on macOS, Windows, and Linux
+- package as a double-clickable desktop app or launcher-backed local web app
+- use Python as the primary implementation language
+- use local model files via Python-only loading
+- not require the llama desktop app
+- use llama-cpp-python for local VLM inference
+- accept GGUF plus matching MMProj files from an app models directory
+- validate model compatibility on startup before a run begins
+- use a strict config file to control all major behavior
+- generate valid mesh candidates from bounded genotype rules
+- reject or repair invalid designs according to defined rules
+- render four views per candidate into a normalized collage
+- score candidates with multi-axis machine aesthetic scoring
+- score candidates with physics heuristics and quick structural checks
+- periodically stop for user top-K selection and pairwise tie-breaks
+- optionally learn a persistent taste model without making the core system dependent on it
+- export STL and metadata for selected candidates
+- cache only what is needed for the most recent generations and checkpoints
+- resume from the latest valid checkpoint after crash or shutdown
+- expose each major subsystem as independently runnable/testable
+
+3.3 Core Reliability Requirements
+
+The application must fail closed on invalid critical inputs and fail soft on optional subsystem errors.
+
+Examples:
+
+- If the taste model fails, evolution continues without taste bias.
+- If one candidate render fails, that candidate is marked invalid or retried; the run continues.
+- If the vision model outputs malformed data, the response is rejected and retried under stricter parsing rules.
+- If the VLM subsystem is unavailable, the run must not silently continue with garbage scores; it must either switch to a configured fallback scoring mode or block the run with a clear error, depending on config.
+- If an exported mesh is non-manifold, export must fail with an explicit reason and the candidate must not be labeled successful.
+
+====================================================================
+4. TARGET USERS
+====================================================================
+
+Primary user:
+
+- technically capable designer / engineer / artist operating locally on a workstation
+
+Secondary future users:
+
+- small studio users who want early-software-grade local generation capability
+
+User assumptions:
+
+- user understands dimensions and basic object classes
+- user is not expected to understand EA internals
+- user may want unusual but bounded forms
+- user may want to keep the run going for many cycles and intervene periodically
+
+====================================================================
+5. TECHNICAL STACK
+====================================================================
+
+5.1 Primary Language
+
+Python is the primary implementation language for V1.
+
+Reason:
+
+- fastest path to functional local tool
+- best interoperability with geometry, ML, web UI, packaging, scientific libraries, and testing
+- avoids premature mixed-language complexity
+
+5.2 Architecture Style
+
+Packaged local web app.
+
+Recommended shape:
+
+- Python backend service on localhost
+- browser-based or embedded-webview frontend
+- desktop launcher starts backend and opens local UI
+- optional native packaging wrapper for convenience
+
+5.3 Core Libraries and Frameworks
+
+Backend / API / App:
+- Python 3.11 or later, pinned by project lockfile
+- FastAPI for local API surface
+- Uvicorn for local ASGI serving
+- Pydantic for strict config and schema validation
+- Typer or argparse for CLI entry points
+- Loguru or standard logging with structured JSON/file logging
+- PyYAML or TOML parser for configuration
+- platform, pathlib, shutil, subprocess, tempfile, hashlib, json, sqlite3 from standard library
+
+Geometry / Mesh / Numeric:
+- numpy
+- scipy
+- trimesh
+- shapely if 2D footprint logic is required
+- networkx for structural graph manipulation
+- pyvista or open3d for additional geometry utilities if needed
+- manifold3d or equivalent robust boolean backend if required by chosen geometry strategy
+- scikit-image only if voxel or implicit meshing utilities become necessary
+
+Rendering:
+- trimesh scene rendering or pyrender / open3d rendering pipeline for speed
+- pillow for image composition/collage assembly
+
+Physics / Structural Approximation:
+- numpy
+- scipy
+- custom beam heuristics module
+- optional pyNiteFEA or another lightweight Python FEA package for elite-only quick structural pass
+
+Machine Learning / Local VLM:
+- llama-cpp-python
+- optional sentence-transformers or scikit-learn for taste-model feature support
+- scikit-learn for ranking/taste model baseline
+
+Data Persistence:
+- sqlite3 for local project database if needed
+- file-based JSON plus parquet/CSV acceptable for logs
+- joblib or pickle only for internal serialized models, not user-facing core data
+
+Testing / Quality:
+- pytest
+- pytest-xdist for parallel tests if needed
+- hypothesis for property-based testing where useful
+- mypy for static type checking
+- ruff for linting / formatting enforcement
+
+Packaging:
+- PyInstaller for fast dirty internal packaging
+- Briefcase or Nuitka optional later, but not required for V1
+- shell scripts for macOS/Linux setup
+- PowerShell script plus batch wrapper for Windows setup
+
+5.4 Forbidden Hard Dependencies in V1
+
+The system must not require:
+
+- Ollama desktop app or server
+- Blender as a runtime dependency
+- a cloud API key
+- Docker as a runtime dependency
+
+Docker may be allowed for development, not for end-user runtime.
+
+====================================================================
+6. DEPLOYMENT TARGETS
+====================================================================
+
+6.1 Supported Operating Systems
+
+- macOS, including Apple Silicon target machines such as 16 GB RAM Mac mini
+- Windows 10/11
+- mainstream Linux distributions with standard Python support
+
+6.2 Hardware Target
+
+Baseline target:
+- 16 GB RAM
+- local CPU
+- optional GPU / Metal / Vulkan / CUDA acceleration only if llama-cpp-python backend and render path support it
+
+The system must run on CPU-only if necessary, though slower.
+
+6.3 Offline Requirement
+
+The application must run fully offline after installation and model placement.
+
+====================================================================
+7. PROJECT DIRECTORY STRUCTURE
+====================================================================
+
+Recommended repository layout:
+
+project_root/
+  app/
+    api/
+    services/
+    controllers/
+    schemas/
+    ui_assets/
+  core/
+    evolution/
+    genome/
+    leagues/
+    selection/
+    mutation/
+    crossover/
+    novelty/
+    map_elites/
+    repair/
+  geometry/
+    generators/
+    primitives/
+    footprints/
+    composition/
+    mesh_validation/
+    export/
+  physics/
+    materials/
+    heuristics/
+    beam/
+    quick_fea/
+    stability/
+  vision/
+    adapters/
+    prompts/
+    parsers/
+    scoring/
+    collage/
+  preference/
+    ranking/
+    persistence/
+    features/
+  storage/
+    checkpoints/
+    cache/
+    db/
+    logs/
+    exports/
+  config/
+    defaults/
+    schemas/
+  scripts/
+    install/
+    package/
+    test/
+    debug/
+  tests/
+    unit/
+    integration/
+    e2e/
+    fixtures/
+  models/
+    vision/
+      model.gguf
+      mmproj.gguf or mmproj.bin as required by backend expectations
+  run.py
+  dev_cli.py
+  README.txt
+  requirements.lock
+
+Every folder above must be real and intentionally owned by a team member or module owner. No orphan subsystems.
+
+====================================================================
+8. CONFIGURATION SYSTEM
+====================================================================
+
+8.1 Config Philosophy
+
+All major run behavior must be config-driven.
+
+8.2 Config File Format
+
+Use YAML for user-facing project configs.
+Use Pydantic models to validate loaded config.
+
+8.3 Config Categories
+
+The config must include:
+
+- app settings
+- OS/runtime paths
+- model settings
+- family selection settings
+- geometry bounds
+- printer volume constraints
+- material settings
+- physics weights and gates
+- EA population settings
+- league settings
+- MAP-Elites descriptor settings
+- mutation/crossover rates
+- review cadence
+- cache retention policy
+- export policy
+- logging policy
+- taste model policy
+- fallback behavior policy
+
+8.4 Config Validation Rules
+
+The config loader must reject:
+
+- missing required family definitions
+- negative dimensions
+- invalid min > max ranges
+- unsupported material names if strict mode is enabled
+- build volumes with non-positive sizes
+- impossible seat/back combinations for chair_family where all seat-support definitions are disabled
+- zero populations or zero generations per review interval
+- invalid score weights if normalization rules require positivity
+- model path mismatches
+
+8.5 Example Config Categories, Not Literal Syntax
+
+app_name
+project_root_path
+models_path
+family_mode
+allowed_families
+printer_build_volume_xyz
+material_default
+material_overrides
+population_count
+islands_per_league
+league_count
+candidates_per_generation
+review_every_n_generations
+top_k_selection_count
+pairwise_tiebreak_count
+physics_gate_threshold
+aesthetic_weight
+novelty_weight
+printability_weight
+taste_model_enabled
+cache_keep_last_n_generations
+export_top_n_on_stop
+
+====================================================================
+9. SUPPORTED FAMILY RULES
+====================================================================
+
+9.1 General Family Philosophy
+
+Each family must be generated from a bounded structural grammar, not from unconstrained mesh noise.
+
+9.2 table_family
+
+Required topological concepts:
+
+- top surface required
+- at least one support path from top to ground required
+- valid support strategies include:
+  - 3 legs
+  - 4 legs
+  - 5 or more legs
+  - central pedestal
+  - multi-pedestal
+  - solid block base
+  - frame support
+  - branched support
+- optional stretchers / braces
+- optional asymmetry allowed if stability rules still pass
+
+9.3 lamp_family
+
+Required topological concepts:
+
+- base or stable support footprint required
+- elevated light-head-like form or upper body required
+- support stem or equivalent connecting structure required unless monolithic form explicitly allowed
+- valid support strategies include pedestal, tripod, multi-leg, block, branching, column
+- floor and table lamp distinctions based on height bounds and base footprint logic
+
+9.4 chair_family_lite
+
+Required topological concepts:
+
+- seat surface required
+- ground support path required
+- configurable back presence boolean
+- if back present, back support geometry required
+- ergonomic precision not required
+- weird forms allowed if they satisfy hard support and seat logic
+- support strategies include:
+  - 3 legs
+  - 4 legs
+  - 5 or more legs
+  - sled-like support
+  - pedestal
+  - block seat support
+  - branching support
+  - monolithic sculptural base
+- optional arm-like forms allowed but not required
+
+Chair lite must not assume detailed anthropometric correctness. It must only enforce minimal logical form requirements: a seat exists, the seat is supported, and an optional back if selected is present and attached.
+
+====================================================================
+10. GEOMETRY REPRESENTATION
+====================================================================
+
+10.1 Representation Decision
+
+Use the following internal pipeline:
+
+Genotype -> Structural Graph -> Parametric Primitive Assembly -> Boolean or CSG Composition -> Mesh Cleanup -> Manifold Mesh -> Render / Score / Export
+
+10.2 Genotype Structure
+
+The genome must be hierarchical.
+
+Layer 1: Family and Archetype Genes
+- family_name
+- subtype
+- topology_family
+- symmetry_mode
+- support_strategy
+- decorative_bias level
+- monolithic vs assembled bias
+
+Layer 2: Structural Graph Genes
+- node count
+- node classes such as ground_anchor, support_joint, surface_anchor, back_anchor, lamp_head_anchor
+- edge classes such as support_member, brace_member, panel_attachment, back_attachment
+- connectivity mask
+- branch depth limits
+
+Layer 3: Continuous Shape Genes
+- width / depth / height
+- seat height / back height where relevant
+- top thickness
+- member thicknesses
+- support angles
+- taper parameters
+- curve bias / bend amount
+- footprint offsets
+- edge radii / fillets if implemented
+- panel cutout ratios if implemented
+
+Layer 4: Optional Surface and Detail Genes
+- perforation flags
+- cutout intensity
+- ribbing intensity
+- asymmetry offsets
+- decorative layering amount
+
+10.3 Gene Constraints
+
+Every gene must define:
+- type
+- allowed range or set
+- default value
+- mutation strategy
+- crossover policy
+- repair function if applicable
+
+10.4 Hard Constraint Philosophy
+
+The genotype may generate strange designs but must not generate nonsense that violates family logic, build-volume limits, or mesh sanity rules.
+
+10.5 Structural Graph Rules
+
+The structural graph must:
+- contain at least one complete load path from elevated functional surface to ground supports
+- prevent orphan nodes from silently surviving unless explicitly used for decorative but attached geometry
+- prevent disconnected floating subgraphs
+- support multiple footprint types
+- support multiple support counts
+- allow asymmetry if stable
+
+====================================================================
+11. GEOMETRY GENERATION PIPELINE
+====================================================================
+
+11.1 Primitive Types
+
+The geometry system should start from a limited but robust primitive set:
+
+- box
+- cylinder
+- tapered cylinder / frustum
+- sphere or ellipsoid only if needed
+- extruded polygon
+- swept profile for curved supports if implementation remains stable
+- panel slab
+- rounded box optional
+
+11.2 Composition Strategy
+
+Use robust assembly and boolean operations conservatively. Avoid overusing booleans if they create instability.
+
+Practical rule:
+- prefer direct assembled watertight submesh construction when possible
+- use booleans only when a design feature needs subtraction, union smoothing, or genuine topological cutout behavior
+
+11.3 Generation Steps
+
+For each candidate:
+
+1. Decode genome.
+2. Instantiate family-specific structural template.
+3. Generate anchor points and support graph.
+4. Generate primitive bodies from graph edges and surfaces.
+5. Compose them into a single mesh or controlled set of attached submeshes.
+6. Weld / merge / clean geometry.
+7. Validate manifoldness and connectedness.
+8. Reject or repair invalid geometry.
+9. Normalize transform and orientation.
+10. Forward to downstream evaluators.
+
+11.4 Repair Stage
+
+Repair may include:
+- removing zero-volume parts
+- welding near-touching components within tolerance
+- enforcing minimum thickness by parameter correction, not mesh inflation if possible
+- reattaching components if a valid intended anchor is within tolerance
+- rejecting candidate if repair exceeds configured limit
+
+11.5 Forbidden Geometry Outcomes
+
+A candidate must be invalidated if any of the following remain after repair:
+- disconnected floating body
+- non-manifold mesh
+- self-intersection beyond tolerance
+- zero-thickness or near-zero-thickness essential structure
+- upside-down or impossible grounding orientation
+- exceeds printer build volume
+- no seat for chair
+- no back when back_required is true
+- no top surface for table
+- no stable base for lamp
+
+====================================================================
+12. BUILD VOLUME ENFORCEMENT
+====================================================================
+
+12.1 Policy
+
+Build volume is a hard constraint.
+
+12.2 Rule
+
+If a candidate exceeds configured printer build volume in any axis after final orientation normalization, it is invalid. It must not be auto-scaled. It must not be exported as valid. It may be logged for debugging if configured.
+
+12.3 Optional Dev Debug Behavior
+
+A developer-only mode may mark such candidates as oversize-debug for inspection, but they must still score as invalid and must not enter elite survival.
+
+====================================================================
+13. MATERIAL MODEL
+====================================================================
+
+13.1 Purpose
+
+Material selection exists to supply density and coarse stiffness assumptions to heuristics and quick structural passes. It does not imply exact fabrication planning.
+
+13.2 Default Material
+
+Default material assumption: wood
+
+13.3 Configurable Materials
+
+At minimum support:
+- wood
+- plastic_printed
+- aluminum
+- steel
+- stone_like
+- custom_material
+
+13.4 Material Parameters
+
+Each material must define, at minimum:
+- density
+- youngs_modulus approximate
+- yield_strength approximate if quick FEA uses stress rules
+- heuristic slenderness modifier
+- printability notes if relevant
+
+13.5 Custom Material
+
+Custom material must be allowed through config and validated for positive numeric properties.
+
+====================================================================
+14. PHYSICS AND STRUCTURAL VALIDATION
+====================================================================
+
+14.1 Multi-Level Evaluation Strategy
+
+Physics evaluation must be staged from cheapest to more expensive.
+
+Stage A: Geometry Sanity / Structural Logic
+- connectivity checks
+- support-path existence
+- footprint grounding
+- center-of-mass rough plausibility
+- min thickness
+- span-thickness heuristics
+
+Stage B: Beam Approximation / Simplified Structural Heuristics
+- member slenderness checks
+- approximate load path distribution
+- deflection heuristics for spans
+- support stress tendency heuristics
+- tip risk under nominal loading
+
+Stage C: Elite-Only Quick FEA Pass
+- only for shortlisted or elite candidates
+- low-mesh-count or beam-shell approximation acceptable
+- intended as coarse validation, not certification
+
+14.2 Physics is Both Gate and Score
+
+Physics must serve both roles:
+- hard invalidity gate for extreme failure states
+- weighted score for ranking among valid candidates
+
+14.3 Load Cases
+
+Table-family default load cases:
+- self-weight
+- top distributed load
+- eccentric corner load simplified
+
+Lamp-family default load cases:
+- self-weight
+- lateral tip susceptibility heuristic
+- upper body cantilever plausibility if applicable
+
+Chair-family-lite default load cases:
+- self-weight
+- seat downward load
+- optional back reaction heuristic if back exists
+- anti-tip plausibility heuristic
+
+14.4 Physics Outputs
+
+Each candidate must expose:
+- passed_hard_physics boolean
+- physics_score scalar normalized 0 to 1 or configured range
+- sub-scores such as stability_score, span_score, slenderness_score, load_path_score
+- failure_reasons list
+
+14.5 Required Hard Failure Examples
+
+Candidate is invalid if any of the following are true:
+- no load path from functional surface to ground
+- center of mass projection clearly outside support polygon under default load condition beyond tolerance
+- primary support members below configured minimum thickness
+- severe span/slenderness violation above configured hard threshold
+- elite quick FEA indicates catastrophic relative failure above configured limit
+
+14.6 Physics Approximation Quality Statement
+
+Physics output is coarse design screening only. It is not a safety certification or engineering release approval.
+
+====================================================================
+15. AESTHETIC SCORING VIA LOCAL VLM
+====================================================================
+
+15.1 Backend
+
+Use llama-cpp-python as the sole V1 local VLM backend.
+
+15.2 Model Discovery
+
+On application startup or project-open, the model manager must:
+- scan the configured models directory
+- identify candidate GGUF and MMProj pairs
+- validate existence
+- validate expected file readability
+- optionally run a lightweight inference self-test
+- reject mismatched or unusable models before a run begins
+
+15.3 Input to the VLM
+
+Each candidate is scored from a 4-view collage containing normalized views from four directions. The views should be consistent in scale, camera framing, background, and lighting. Views should capture all major sides of the object.
+
+15.4 Scoring Axes
+
+The VLM must output only structured ratings, no freeform paragraph dependence. At minimum:
+
+- aesthetic_coherence
+- proportion_balance
+- novelty_interest
+- style_match
+- plausibility_of_form
+- elegance_or_visual_resolution
+
+15.5 Output Contract
+
+The VLM adapter must request a strict machine-readable schema. Example conceptual contract:
+
+{
+  "aesthetic_coherence": 0-10,
+  "proportion_balance": 0-10,
+  "novelty_interest": 0-10,
+  "style_match": 0-10,
+  "plausibility_of_form": 0-10,
+  "visual_resolution": 0-10,
+  "overall": 0-10
+}
+
+15.6 Parser Rules
+
+The parser must:
+- accept only exact keys
+- coerce numeric strings only if safe
+- reject extra unexpected text in strict mode
+- clamp out-of-range outputs only if configured to do so
+- otherwise treat malformed output as a scoring failure
+
+15.7 Retry Strategy
+
+If the model outputs malformed content:
+- retry with a stronger schema reminder and temperature-lowered prompt
+- if second retry fails, mark candidate with vision_score_failure
+- if too many failures occur globally, halt run or degrade to fallback depending on config
+
+15.8 Fallback Policy
+
+Possible fallback modes:
+- fail run immediately if VLM required
+- use last-known-valid score only for same candidate hash if cached
+- use physics plus novelty only if configured fallback is allowed
+
+Default recommendation for V1:
+VLM required, but per-candidate failures do not kill the whole run until a configured failure-rate threshold is exceeded.
+
+====================================================================
+16. RENDERING PIPELINE
+====================================================================
+
+16.1 Render Philosophy
+
+Renders are functional evaluation assets, not beauty renders.
+
+16.2 Requirements
+
+For each candidate generate:
+- 4 views minimum
+- consistent neutral background
+- normalized object scale in frame
+- consistent lighting and camera policy
+- image collage saved to cache
+
+16.3 View Set
+
+Use four consistent oblique/isometric-ish views or cardinal rotational views equivalent to north/south/east/west perception. The implementation must be deterministic.
+
+16.4 Render Output Rules
+
+- same resolution for all candidate collages in a run
+- same image format, preferably PNG
+- same padding and collage layout
+- object centered and not clipped
+- bounding box normalization must happen before rendering
+
+16.5 Render Failures
+
+If rendering fails for a candidate:
+- retry once after mesh reload
+- if it still fails, mark candidate invalid or render-failed according to config
+- do not allow silent omission of render assets for VLM-scored candidates
+
+====================================================================
+17. HUMAN-IN-THE-LOOP REVIEW
+====================================================================
+
+17.1 Review Cadence
+
+The run must stop every configurable N generations and enter review mode. A manual pause button must queue a stop at the next safe review boundary. The application must not interrupt halfway through an active generation unless emergency stop is requested.
+
+17.2 Review Actions
+
+The user must be able to:
+- view a gallery of current candidate collages
+- sort by fitness, novelty, family subtype, island, league, or generation
+- inspect candidate metadata
+- select top K favorites
+- perform pairwise tie-breaks among shortlist members
+- export any displayed candidate
+- mark candidate as pinned if desired
+
+17.3 Effect of Human Selections
+
+Human selections strongly boost survival and reproduction eligibility but must not override hard invalidity. A broken candidate stays broken.
+
+17.4 Pairwise Tie-Breaks
+
+Pairwise selections should be used to:
+- resolve near-equal favorites
+- produce taste-model training data if enabled
+- optionally bias elite pool ranking
+
+====================================================================
+18. OPTIONAL TASTE MODEL
+====================================================================
+
+18.1 Philosophy
+
+Taste learning is optional and non-critical. The system must work without it.
+
+18.2 Requirements
+
+If enabled, the taste model must:
+- persist across sessions
+- learn from top-K selections and pairwise choices
+- produce a taste_bonus score or ranking prior
+- never be the sole survival criterion
+- degrade gracefully if unavailable or corrupted
+
+18.3 Failure Isolation
+
+If the taste model fails to load, train, or infer:
+- log the failure
+- disable taste bonuses for current run
+- continue core evolution normally
+
+18.4 Suggested Initial Implementation
+
+Use a simple ranking model first:
+- pairwise preference dataset
+- feature vectors from genome features plus VLM score axes plus simple morphology descriptors
+- train a lightweight scikit-learn model such as logistic regression, ranking SVM approximation, gradient boosting, or pairwise classifier
+
+18.5 Persistence
+
+Store taste model artifacts under project or user-level preference folder with:
+- model version
+- training set metadata
+- feature schema version
+- timestamp
+
+====================================================================
+19. EVOLUTIONARY ENGINE OVERVIEW
+====================================================================
+
+19.1 Core Strategy
+
+Use an island model plus MAP-Elites / quality-diversity hybrid with league structure.
+
+19.2 Why This Strategy
+
+This problem is not pure scalar optimization. The system must preserve diversity of forms, support weird but valid morphologies, and avoid converging instantly on a narrow local optimum. Standard GA alone is too brittle.
+
+19.3 Primary Concepts
+
+- population
+- island
+- league
+- archive
+- elite
+- novelty pressure
+- hard invalidity filtering
+- optional human preference bias
+
+====================================================================
+20. LEAGUES, ISLANDS, AND POPULATIONS
+====================================================================
+
+20.1 League Purpose
+
+Leagues are higher-order organizational groups that keep search regimes differentiated. They prevent the full system from collapsing into one dominant style family too early.
+
+20.2 Example League Types
+
+Leagues may be based on:
+- family subtype emphasis
+- topology style emphasis
+- novelty aggressiveness
+- structural conservatism vs aesthetic aggression
+- monolithic vs skeletal design bias
+
+20.3 Island Purpose
+
+Each league contains multiple islands. Islands evolve semi-independently under slightly different operator rates, descriptor niches, or style priors.
+
+20.4 Island Migration
+
+Migration must be supported periodically. Only valid or near-valid high-performing candidates should migrate. Migration rate must be configurable.
+
+20.5 League Promotion / Relegation Concept
+
+The system should optionally support league-style comparative pressure:
+- islands or subpopulations that stagnate can be refreshed from stronger pools
+- underperforming islands can receive migrants from better islands
+- league rules can rebalance exploration vs exploitation
+
+20.6 Minimal V1 League Mechanism
+
+For V1, implement a practical league mechanism:
+- each league has distinct mutation/crossover biases and descriptor targets
+- league leaderboards track top valid candidates over review windows
+- poor-performing islands get partial reseeding
+- winning islands contribute more migrants
+
+====================================================================
+21. MAP-ELITES / QUALITY-DIVERSITY LAYER
+====================================================================
+
+21.1 Purpose
+
+MAP-Elites or an equivalent archive must preserve a wide range of viable design types rather than only the single top-fitness family.
+
+21.2 Descriptor Axes
+
+Use descriptor bins appropriate to family. Examples:
+- support count
+- footprint compactness
+- monolithic vs open-frame ratio
+- symmetry vs asymmetry level
+- height-to-width ratio
+- perceived massing class
+
+21.3 Archive Policy
+
+For each descriptor cell, keep the best valid candidate by configured ranking score. The archive must support per-family descriptors if needed.
+
+21.4 Use of Archive
+
+Archive content may:
+- seed future generations
+- populate gallery diversity samples
+- provide fallback survivors when current generation degenerates
+
+====================================================================
+22. FITNESS COMPOSITION
+====================================================================
+
+22.1 Multi-Objective Philosophy
+
+Do not reduce everything to one naive number internally. Maintain sub-scores, then derive ranked fitness as needed.
+
+22.2 Candidate Score Components
+
+At minimum:
+- validity_gate
+- printability_gate
+- family_logic_gate
+- physics_score
+- aesthetic_score
+- novelty_score
+- style_match_score
+- optional taste_bonus
+- optional simplicity_penalty or complexity_penalty
+
+22.3 Hard Gates First
+
+If a candidate fails any hard gate, it is not elite-eligible.
+
+22.4 Rank Composition
+
+For valid candidates, compute a weighted combined score from configured normalized sub-scores.
+
+22.5 Suggested Ordering
+
+1. Validate hard constraints.
+2. Compute physics.
+3. Compute render.
+4. Compute VLM scores.
+5. Compute novelty.
+6. Apply optional taste bonus.
+7. Compute combined ranking.
+8. Update archive / elites / league leaderboards.
+
+====================================================================
+23. NOVELTY AND DIVERSITY
+====================================================================
+
+23.1 Novelty Requirement
+
+The system must actively preserve diversity. Otherwise it will rapidly converge to a boring local family.
+
+23.2 Novelty Sources
+
+Novelty may be computed from:
+- genome distance
+- morphology descriptor distance
+- image-embedding distance if later added
+- support topology difference
+- footprint and massing difference
+
+23.3 Minimal V1 Novelty Implementation
+
+Use weighted distance over:
+- family subtype
+- support count
+- footprint shape descriptors
+- massing ratio descriptors
+- key continuous genes
+
+====================================================================
+24. SELECTION, CROSSOVER, MUTATION, AND REPAIR
+====================================================================
+
+24.1 Selection
+
+Use elitist survival among valid candidates with diversity preservation. Invalid candidates may remain only in debug pools, not elites.
+
+24.2 Parent Selection
+
+Use a mixture of:
+- elite-biased selection
+- archive-biased injection
+- human-selected boost
+- novelty-preserving random valid selection
+
+24.3 Crossover
+
+Crossover must be compatibility-aware.
+
+Rules:
+- same family only by default
+- same or compatible topology families preferred
+- incompatible structural templates should not be naively crossed
+- graph crossover must preserve family logic and attachment semantics
+
+24.4 Mutation
+
+Mutation must support:
+- continuous parameter perturbation
+- support count mutation within allowed family range
+- topology family mutation at controlled rate
+- asymmetry toggle mutation
+- back-present toggle for chairs where allowed
+- support footprint mutation
+- member thickness mutation
+- brace / stretcher insertion or deletion where valid
+
+24.5 Adaptive Operator Rates
+
+The engine should track operator success and adjust probabilities over time. Operators that produce valid high-performing offspring should be upweighted.
+
+24.6 Repair Policy
+
+Repair is allowed but bounded. Repair must not become a hidden second generator. If mutation/crossover repeatedly produce garbage, the operator design is wrong.
+
+====================================================================
+25. RUN LOOP
+====================================================================
+
+25.1 Main Loop
+
+For each generation in each active island:
+
+1. Select parents.
+2. Generate offspring through crossover/mutation.
+3. Decode genomes.
+4. Generate geometry.
+5. Validate geometry.
+6. Reject or repair invalid candidates.
+7. Evaluate build-volume compliance.
+8. Evaluate physics heuristics.
+9. Render valid candidates.
+10. Score with local VLM.
+11. Compute novelty and combined scores.
+12. Update island population.
+13. Update league scoreboard.
+14. Update archives and elites.
+15. Apply migration / reseeding if scheduled.
+16. If review boundary reached, pause for user review.
+
+25.2 Safe Review Boundary
+
+A review boundary occurs only after all active candidate evaluations for the generation are complete or safely marked failed.
+
+25.3 Stop Behavior
+
+When user stops the run:
+- finish current safe boundary
+- checkpoint state
+- export configured top candidates
+- flush logs
+- clear transient cache according to retention policy
+
+====================================================================
+26. STORAGE, CACHE, AND CHECKPOINTING
+====================================================================
+
+26.1 Storage Classes
+
+Persistent:
+- project config snapshot
+- accepted checkpoints
+- elite genomes
+- archive summaries
+- selected export artifacts
+- logs
+- taste model artifacts if enabled
+
+Transient:
+- candidate temp meshes
+- render temp images
+- VLM request/response temp data if stored
+- intermediate evaluation outputs
+
+26.2 Cache Retention Policy
+
+The cache must not grow indefinitely.
+
+Required behavior:
+- after each generation or review boundary, delete transient files not needed for recovery, current gallery, or configured retention window
+- keep only the most recent N generations of transient cache as configured
+- always preserve latest successful checkpoint and export assets
+
+26.3 Checkpoint Content
+
+A checkpoint must include:
+- RNG state
+- config snapshot
+- generation counters
+- island populations
+- archive state
+- elite state
+- league metadata
+- pending review state if any
+- optional taste model state reference
+- candidate metadata needed for resume
+
+26.4 Crash Recovery
+
+On startup, if an incomplete prior run is detected, the application must offer:
+- resume from last valid checkpoint
+- start new run
+- inspect logs
+
+====================================================================
+27. EXPORTS
+====================================================================
+
+27.1 Required Export Types
+
+For selected or top candidates export:
+- STL mesh
+- optional OBJ or GLB preview file
+- render collage PNG
+- candidate metadata JSON
+- score report JSON or TXT
+- lineage summary TXT or JSON
+
+27.2 Export Validity Rule
+
+Only hard-valid candidates may be exported as successful final outputs unless debug export is explicitly enabled.
+
+27.3 Export Metadata
+
+Each export package should include:
+- candidate id
+- generation id
+- island id
+- league id
+- family type
+- genome parameters
+- material assumption
+- printer-volume validation result
+- physics results
+- aesthetic results
+- taste bonus if any
+
+====================================================================
+28. USER INTERFACE REQUIREMENTS
+====================================================================
+
+28.1 UI Form
+
+Local web app UI with desktop launcher.
+
+28.2 Required Screens
+
+- project creation screen
+- config editor / validator screen
+- model setup screen
+- run dashboard
+- generation gallery
+- candidate detail screen
+- review screen
+- export manager
+- logs / diagnostics screen
+
+28.3 Run Dashboard Must Show
+
+- current project
+- current family / active families
+- generation number
+- island count
+- league summary
+- active candidate counts
+- invalid candidate rates
+- VLM health
+- taste model status
+- cache usage
+- current top candidates
+
+28.4 Candidate Detail View Must Show
+
+- collage
+- basic dimensions
+- family subtype
+- support strategy
+- physics sub-scores
+- VLM sub-scores
+- validity flags
+- lineage summary
+- export button
+
+28.5 Review UX
+
+The review UI must make top-K selection and pairwise comparison quick. The UI must not force the user into slow spreadsheet-style workflows.
+
+====================================================================
+29. API REQUIREMENTS
+====================================================================
+
+Even though this is a local app, define internal API routes or service boundaries cleanly.
+
+Minimum route categories:
+- project create/load/resume
+- config validate/update
+- model scan/validate
+- run start/pause/stop
+- gallery fetch
+- candidate detail fetch
+- review submit
+- export request
+- diagnostics fetch
+
+Avoid tight coupling between UI and internal modules. The UI must call stable service boundaries.
+
+====================================================================
+30. MODEL MANAGEMENT
+====================================================================
+
+30.1 Model Directory Rules
+
+The application must use a configurable local models directory.
+
+30.2 Required Model Metadata Detection
+
+The model manager should identify:
+- candidate base model file
+- candidate mmproj file
+- file size
+- hash or checksum optional
+- compatibility status
+- load test status
+
+30.3 Startup Behavior
+
+If no valid model is found and VLM is required, the application must block run start with a precise error.
+
+30.4 Memory Protection
+
+On low-memory machines, the application should expose conservative inference settings through config to avoid hard crashes.
+
+====================================================================
+31. PARALLELISM AND PERFORMANCE
+====================================================================
+
+31.1 Parallelism
+
+Candidate evaluation should support parallel execution where safe.
+
+31.2 Practical Parallel Stages
+
+These can often be parallelized:
+- geometry generation per candidate
+- physics heuristics per candidate
+- render per candidate
+- VLM scoring in controlled serial or batched fashion depending backend limits
+
+31.3 Resource Protection
+
+The scheduler must prevent overcommitting memory on small machines. On a 16 GB Mac mini, concurrent candidate counts must be conservative.
+
+31.4 Recommended Policy
+
+- geometry/physics/render parallelism limited by worker pool
+- VLM inference serialized or lightly queued unless backend behavior proves stable under concurrency
+
+====================================================================
+32. LOGGING AND DIAGNOSTICS
+====================================================================
+
+32.1 Logging Requirements
+
+The system must log:
+- startup environment
+- OS detection
+- config load results
+- model validation results
+- generation summaries
+- candidate invalidity reasons
+- render failures
+- VLM parse failures
+- physics failures
+- cache cleanup actions
+- checkpoint saves
+- export results
+
+32.2 Log Format
+
+Maintain both:
+- human-readable rotating log file
+- machine-readable structured log or event JSON lines file
+
+32.3 Debug IDs
+
+Every candidate must have a stable id. Every generation, island, league, and checkpoint must be traceable.
+
+====================================================================
+33. EXCEPTION HANDLING POLICY
+====================================================================
+
+33.1 General Policy
+
+No subsystem may throw uncaught exceptions to the UI layer during a normal run. All major worker failures must be caught, classified, logged, and converted into explicit run-state transitions or candidate-state transitions.
+
+33.2 Exception Classes
+
+Define explicit exception classes such as:
+- ConfigValidationError
+- ModelDiscoveryError
+- ModelInferenceError
+- GeometryGenerationError
+- MeshValidationError
+- BuildVolumeError
+- PhysicsEvaluationError
+- RenderError
+- ScoringParseError
+- CheckpointError
+- ExportError
+- TasteModelError
+
+33.3 Candidate-Level Failure vs Run-Level Failure
+
+Candidate-level failures:
+- single geometry failure
+- single render failure
+- single VLM parse failure after retries
+- single physics failure
+
+Run-level failures:
+- missing required model
+- corrupt config
+- checkpoint save impossible
+- repeated widespread VLM failure above threshold
+- disk full on essential persistence path
+
+33.4 Essential Reliability Rules
+
+- never silently drop failed candidates from counts
+- never mark a candidate valid if any hard gate failed
+- never overwrite latest good checkpoint until new checkpoint is confirmed written
+- never continue with half-loaded config
+- never trust model output format without parsing and validation
+- never export mesh without manifold validation
+
+====================================================================
+34. OS DETECTION AND INSTALLATION REQUIREMENTS
+====================================================================
+
+34.1 Installer Philosophy
+
+The repository must include setup scripts that detect OS and install required dependencies for development/runtime preparation.
+
+34.2 Required Scripts
+
+- setup_macos.sh
+- setup_linux.sh
+- setup_windows.ps1
+- optional wrapper setup_all.py that detects OS and calls platform-specific script
+
+34.3 Setup Script Responsibilities
+
+Each setup script must:
+- detect current OS and architecture
+- verify Python availability or instruct clearly if missing
+- create virtual environment
+- install pinned Python dependencies
+- verify basic import health
+- create required folders
+- optionally run a smoke test
+- print next steps or create launcher shortcuts if supported
+
+34.4 Setup Script Failure Behavior
+
+If dependency installation fails:
+- exit non-zero
+- print failing package name or command
+- point user to log file
+- do not continue pretending install succeeded
+
+34.5 Packaging Script Responsibilities
+
+- build PyInstaller or chosen package target
+- copy default config
+- copy launcher assets
+- create models folder
+- create exports/cache/projects directories
+- produce platform-specific output artifact
+
+====================================================================
+35. PACKAGING REQUIREMENTS
+====================================================================
+
+35.1 V1 Packaging Goal
+
+Quick dirty internal product, early-software style. Functional first. Fancy packaging not required.
+
+35.2 Packaging Method
+
+Preferred V1:
+- PyInstaller application bundle
+- desktop launcher script or executable
+- backend starts automatically on launch
+- local UI opens in default browser
+
+35.3 Productizable Skeleton, Minimal
+
+Include minimal hooks for:
+- app version display
+- config versioning
+- project format versioning
+- future licensing stub if desired
+
+Do not build a full commercial installer framework unless needed.
+
+====================================================================
+36. SECURITY AND FILE SAFETY
+====================================================================
+
+36.1 Local Safety
+
+This is a local app, but it must still avoid bad file behavior.
+
+Requirements:
+- do not execute arbitrary files from project directories
+- do not auto-load arbitrary Python plugins
+- sanitize filenames for exports
+- avoid path traversal by resolving to project root / export root
+- isolate temp files in app-owned temp dirs
+
+36.2 Model File Safety
+
+Do not trust arbitrary filenames. Validate file existence, expected extension, and controlled directory placement.
+
+====================================================================
+37. TESTING REQUIREMENTS
+====================================================================
+
+37.1 Test Philosophy
+
+Every major subsystem must be runnable independently and testable without the full app.
+
+37.2 Required Test Categories
+
+Unit tests for:
+- config validation
+- genome decode/encode
+- family constraint rules
+- mesh validation utilities
+- physics heuristics
+- VLM parser
+- cache cleanup logic
+- checkpoint read/write
+
+Integration tests for:
+- end-to-end candidate generation
+- render pipeline
+- scoring pipeline with mocked VLM
+- review flow
+- export flow
+- resume from checkpoint
+
+End-to-end tests for:
+- new project to first gallery
+- one full review cycle
+- crash resume from checkpoint
+
+37.3 Property Tests
+
+Use property-based tests where useful for:
+- dimension bounds
+- min/max gene integrity
+- repair routines not producing negative dimensions
+- cache cleanup not deleting protected assets
+
+====================================================================
+38. ACCEPTANCE CRITERIA
+====================================================================
+
+The V1 system is acceptable only if all of the following are true:
+
+- User can launch app locally on supported OS.
+- User can create a project with table, lamp, or chair family settings.
+- Config validation catches invalid inputs before run start.
+- Model validation catches missing or unusable GGUF/MMProj pair.
+- System generates valid candidates and rejects invalid ones with explicit reasons.
+- System renders 4-view collages consistently.
+- System scores candidates through llama-cpp-python with structured output parsing.
+- System pauses every configured N generations.
+- User can select top K and perform pairwise tie-breaks.
+- Human selections boost survival without overriding hard invalidity.
+- Cache does not grow without bound.
+- Checkpoints allow recovery after crash.
+- Exports include STL plus metadata.
+- Optional taste model can fail without breaking core evolution.
+
+====================================================================
+39. MINIMUM IMPLEMENTATION PLAN
+====================================================================
+
+Phase 1: Foundations
+- repository skeleton
+- config schemas
+- logging
+- setup scripts
+- local app shell
+
+Phase 2: Geometry Core
+- genotype schema
+- family rule definitions
+- graph decode
+- primitive assembly
+- mesh validation
+
+Phase 3: Physics and Rendering
+- geometry sanity checks
+- support path checks
+- stability heuristics
+- beam approximation
+- quick render collage pipeline
+
+Phase 4: VLM Scoring
+- llama-cpp-python adapter
+- strict parser
+- model validation
+- scoring cache
+
+Phase 5: EA Core
+- island populations
+- leagues
+- MAP-Elites archive
+- selection/mutation/crossover/repair
+- migration / reseeding
+
+Phase 6: UI and Review Loop
+- dashboard
+- gallery
+- review controls
+- export flows
+
+Phase 7: Taste Model Optional Layer
+- pairwise preference dataset
+- simple persistent model
+- opt-in biasing
+
+Phase 8: Hardening
+- checkpoint recovery
+- cache cleanup
+- packaging
+- cross-platform smoke tests
+
+====================================================================
+40. PRACTICAL DEVELOPMENT GUIDELINES
+====================================================================
+
+- Keep primitives simple and stable before getting fancy.
+- Keep family grammars explicit and bounded.
+- Do not let the repair system become a secret generator.
+- Do not let VLM free text leak into scoring logic.
+- Do not make chairs too smart in V1.
+- Do not trust any export until manifold validation passes.
+- Do not allow cache directories to become permanent data dumps.
+- Keep every subsystem runnable from a direct CLI command for debugging.
+- Keep the taste model optional and externally attached.
+
+====================================================================
+41. CLI / DEBUG ENTRY POINTS
+====================================================================
+
+The following direct commands or equivalent entry points should exist:
+
+- validate_config
+- scan_models
+- test_model_inference
+- generate_candidate_once
+- render_candidate_once
+- evaluate_physics_once
+- score_candidate_once
+- run_generation_once
+- run_project
+- resume_project
+- export_candidate
+- cleanup_cache
+- train_taste_model
+- run_smoke_test
+
+These are essential for debugging and development speed.
+
+====================================================================
+42. FUTURE EXPANSION HOOKS, NOT REQUIRED FOR V1
+====================================================================
+
+The architecture should not block future addition of:
+- more families
+- better renderer
+- stronger FEA
+- GPU acceleration
+- alternate local model backends
+- cloud or multi-user later
+- licensing layer later
+- image-reference style conditioning later
+- mesh-to-CAD postprocessing later
+
+But none of these should complicate the V1 core.
+
+====================================================================
+43. FINAL BUILD COMMANDMENT
+====================================================================
+
+Build the smallest system that reliably does the following:
+
+- bounded family-aware geometry generation
+- hard constraint enforcement
+- coarse structural screening
+- strict local VLM scoring from 4-view collages
+- league/island/diversity-aware evolution
+- periodic human top-K and pairwise review
+- STL export with metadata
+- checkpointing and cache cleanup
+- cross-platform launchability
+
+If a feature does not improve those outcomes, it should not be in V1.
+
+END OF SPECIFICATION

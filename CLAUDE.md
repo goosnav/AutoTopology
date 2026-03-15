@@ -1,0 +1,3 @@
+- remove dead code
+- check for security issues
+- follow project and industry standard devleoper conventions

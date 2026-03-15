@@ -1,0 +1,116 @@
+############################
+# OS / editor junk
+############################
+
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+*.log
+
+############################
+# Python environments
+############################
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.env
+.venv
+venv/
+env/
+
+############################
+# Python build artifacts
+############################
+
+build/
+dist/
+*.egg-info/
+.eggs/
+
+############################
+# ML / LLM model weights
+############################
+
+*.gguf
+*.ggml
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+models/
+checkpoints/
+weights/
+
+############################
+# Datasets
+############################
+
+data/
+datasets/
+*.parquet
+*.arrow
+*.hdf5
+*.h5
+*.npz
+
+############################
+# Generated outputs
+############################
+
+outputs/
+results/
+runs/
+logs/
+wandb/
+
+############################
+# Images (generated assets)
+############################
+
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.bmp
+*.tiff
+
+############################
+# 3D / CAD / printing files
+############################
+
+*.stl
+*.obj
+*.ply
+*.3mf
+*.fbx
+*.gltf
+*.glb
+
+############################
+# Jupyter
+############################
+
+.ipynb_checkpoints/
+
+############################
+# IDE
+############################
+
+.vscode/
+.idea/
+
+############################
+# Caches
+############################
+
+.cache/
+*.cache
