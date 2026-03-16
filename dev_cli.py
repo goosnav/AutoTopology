@@ -140,10 +140,37 @@ def render_candidate_once(
 
 @app.command()
 def evaluate_physics_once(
-    mesh: Optional[Path] = typer.Option(None, "--mesh"),
+    family: str = typer.Option("table_family", "--family", "-f"),
+    seed: int = typer.Option(42, "--seed", "-s"),
+    material: str = typer.Option("wood", "--material", "-m"),
 ):
-    """Evaluate physics heuristics for a candidate."""
-    _stub("evaluate-physics-once")
+    """Evaluate physics heuristics for a generated candidate."""
+    import random as _random
+    from core.genome.catalog_registry import get_catalog
+    from core.genome.genome import Genome
+    from core.genome.graph_builder import build_graph
+    from geometry.generators.generator_registry import generate_mesh
+    from physics.scoring import evaluate_physics
+
+    try:
+        catalog = get_catalog(family)
+        rng = _random.Random(seed)
+        genome = Genome.random_init(catalog, rng)
+        mesh = generate_mesh(genome)
+        graph = build_graph(genome, catalog)
+        result = evaluate_physics(mesh, graph, genome.genes, material_name=material)
+
+        status = "PASS" if result.passed_hard_physics else "FAIL"
+        typer.echo(f"Physics evaluation [{status}]: score={result.physics_score:.3f}")
+        typer.echo(f"  Connectivity: {result.connectivity.score:.2f} (connected={result.connectivity.is_connected})")
+        typer.echo(f"  Stability:    {result.stability.score:.2f} (stable={result.stability.is_stable})")
+        typer.echo(f"  Thickness:    {result.thickness.score:.2f} (passed={result.thickness.passed})")
+        typer.echo(f"  Beam:         {result.beam.score:.2f} (slenderness={result.beam.max_slenderness:.1f})")
+        if result.failure_reasons:
+            typer.echo(f"  Failures: {'; '.join(result.failure_reasons)}")
+    except Exception as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()

@@ -97,3 +97,38 @@ async def generate_candidate(
         },
         "genes": genome.to_dict()["genes"],
     }
+
+
+@router.get("/api/evaluate-physics")
+async def evaluate_physics_endpoint(
+    family: str = Query("table_family", description="Furniture family"),
+    seed: Optional[int] = Query(None, description="Random seed (omit for random)"),
+    material: str = Query("wood", description="Material name"),
+):
+    """Generate a candidate and evaluate its physics properties."""
+    from core.genome.catalog_registry import get_catalog
+    from core.genome.genome import Genome
+    from core.genome.graph_builder import build_graph
+    from geometry.generators.generator_registry import generate_mesh
+    from physics.scoring import evaluate_physics
+
+    if seed is None:
+        seed = random.randint(0, 2**31 - 1)
+
+    catalog = get_catalog(family)
+    rng = random.Random(seed)
+    genome = Genome.random_init(catalog, rng)
+    mesh = generate_mesh(genome)
+    graph = build_graph(genome, catalog)
+    result = evaluate_physics(mesh, graph, genome.genes, material_name=material)
+
+    return {
+        "genome_id": genome.genome_id,
+        "family": family,
+        "seed": seed,
+        "material": material,
+        "passed_hard_physics": result.passed_hard_physics,
+        "physics_score": result.physics_score,
+        "sub_scores": result.sub_scores,
+        "failure_reasons": result.failure_reasons,
+    }
