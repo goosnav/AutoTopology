@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/core/genome/lamp_genes.py
+# hypothesis_version: 6.151.9
+
+[-0.2, 0.0, 0.2, 0.3, 0.5, 1.0, 2.0, 5.0, 15.0, 30.0, 50.0, 60.0, 150.0, 200.0, 300.0, 450.0, 500.0, 600.0, 1500.0, 1800.0, 'asymmetry_offset_x', 'asymmetry_offset_y', 'base_plate', 'bilateral', 'brace_count', 'branch_depth', 'clamp', 'cone', 'connectivity_density', 'curve_bias', 'cutout_intensity', 'cylinder', 'decorative_bias', 'depth', 'desk', 'dome', 'family_name', 'fillet_radius', 'flat', 'floor', 'head_diameter', 'height', 'hybrid', 'lamp_family', 'member_thickness', 'monolithic', 'monolithic_ratio', 'none', 'pendant', 'perforation_density', 'perforation_flag', 'radial', 'ribbing_intensity', 'shade_type', 'skeletal', 'stem_height', 'subtype', 'support_count', 'support_strategy', 'symmetry_mode', 'taper_ratio', 'topology_family', 'tripod', 'wall', 'weighted', 'width']

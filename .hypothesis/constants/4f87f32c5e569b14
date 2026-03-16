@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/core/genome/table_genes.py
+# hypothesis_version: 6.151.9
+
+[-0.2, 0.0, 0.05, 0.2, 0.3, 0.4, 0.5, 1.0, 1.5, 2.0, 5.0, 8.0, 20.0, 25.0, 30.0, 40.0, 80.0, 120.0, 200.0, 600.0, 750.0, 800.0, 1200.0, 1500.0, 2000.0, 'asymmetry_offset_x', 'asymmetry_offset_y', 'bilateral', 'brace_count', 'branch_depth', 'cantilever', 'coffee', 'connectivity_density', 'console', 'corner', 'curve_bias', 'cutout_intensity', 'decorative_bias', 'depth', 'desk', 'dining', 'family_name', 'fillet_radius', 'footprint_inset', 'height', 'hybrid', 'member_thickness', 'monolithic', 'monolithic_ratio', 'none', 'pedestal', 'perforation_density', 'perforation_flag', 'radial', 'ribbing_intensity', 'side', 'skeletal', 'subtype', 'support_angle', 'support_count', 'support_strategy', 'symmetry_mode', 'table_family', 'taper_ratio', 'top_thickness', 'topology_family', 'trestle', 'width']

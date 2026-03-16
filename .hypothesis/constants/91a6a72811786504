@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/core/genome/chair_genes.py
+# hypothesis_version: 6.151.9
+
+[-0.2, 0.0, 0.2, 0.3, 0.5, 1.0, 1.5, 2.0, 5.0, 10.0, 15.0, 30.0, 80.0, 150.0, 300.0, 350.0, 400.0, 450.0, 550.0, 600.0, 700.0, 800.0, 850.0, 1200.0, 'arm_present', 'asymmetry_offset_x', 'asymmetry_offset_y', 'back_angle', 'back_height', 'back_present', 'bilateral', 'brace_count', 'branch_depth', 'cantilever', 'chair_family_lite', 'connectivity_density', 'curve_bias', 'cutout_intensity', 'decorative_bias', 'depth', 'dining', 'family_name', 'fillet_radius', 'four_leg', 'height', 'hybrid', 'lounge', 'member_thickness', 'monolithic', 'monolithic_ratio', 'none', 'office', 'pedestal', 'perforation_density', 'perforation_flag', 'ribbing_intensity', 'seat_height', 'skeletal', 'sled', 'stool', 'subtype', 'support_count', 'support_strategy', 'symmetry_mode', 'taper_ratio', 'topology_family', 'width']

@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/geometry/generators/lamp_generator.py
+# hypothesis_version: 6.151.9
+
+[1e-08, 1e-06, 0.3, 0.5, 0.6, 1.0, 'base', 'cone', 'dome', 'edge_type', 'flat', 'head', 'head_diameter', 'member_thickness', 'pos', 'shade_type', 'support_member', 'taper_ratio', 'width']

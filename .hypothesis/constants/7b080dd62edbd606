@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/geometry/generators/generator_registry.py
+# hypothesis_version: 6.151.9
+
+['chair_family_lite', 'family_name', 'lamp_family', 'table_family']

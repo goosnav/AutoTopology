@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/geometry/generators/table_generator.py
+# hypothesis_version: 6.151.9
+
+[1e-08, 1e-06, 1.0, 'brace_member', 'depth', 'edge_type', 'height', 'member_thickness', 'pos', 'support_member', 'taper_ratio', 'top_thickness', 'width']

@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/geometry/generators/chair_generator.py
+# hypothesis_version: 6.151.9
+
+[1e-08, 1e-06, 0.5, 0.6, 0.7, 0.9, 1.0, 15.0, 'back_base', 'back_top', 'brace_member', 'depth', 'edge_type', 'left', 'member_thickness', 'pos', 'right', 'seat_height', 'support_member', 'taper_ratio', 'width']
