@@ -64,3 +64,17 @@ def test_stubbed_command_exits_cleanly():
     result = runner.invoke(app, ["test-model-inference"])
     assert result.exit_code == 0
     assert "Not implemented yet" in result.output
+
+
+def test_generate_candidate_once_produces_output(tmp_path):
+    result = runner.invoke(app, [
+        "generate-candidate-once",
+        "--family", "table_family",
+        "--seed", "42",
+        "--output-dir", str(tmp_path),
+    ])
+    assert result.exit_code == 0
+    assert "Generated" in result.output
+    # Check STL was created
+    stl_files = list(tmp_path.glob("*.stl"))
+    assert len(stl_files) == 1

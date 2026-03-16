@@ -99,9 +99,35 @@ def test_model_inference():
 def generate_candidate_once(
     family: str = typer.Option("table_family", "--family", "-f"),
     seed: int = typer.Option(42, "--seed", "-s"),
+    output_dir: Path = typer.Option(Path("."), "--output-dir", "-o"),
 ):
-    """Generate a single candidate mesh."""
-    _stub("generate-candidate-once")
+    """Generate a single candidate mesh and export as STL."""
+    import random
+    from core.genome.catalog_registry import get_catalog
+    from core.genome.genome import Genome
+    from geometry.generators.generator_registry import generate_mesh
+    from geometry.mesh_validation.validator import validate_mesh
+    from geometry.export.exporter import export_stl
+
+    try:
+        catalog = get_catalog(family)
+        rng = random.Random(seed)
+        genome = Genome.random_init(catalog, rng)
+        mesh = generate_mesh(genome)
+        report = validate_mesh(mesh)
+
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        stl_path = output_dir / f"{genome.genome_id}.stl"
+        json_path = output_dir / f"{genome.genome_id}.json"
+        export_stl(mesh, stl_path, metadata=genome.to_dict(), metadata_path=json_path)
+
+        typer.echo(f"Generated {family} candidate: {genome.genome_id}")
+        typer.echo(f"  Mesh: {report}")
+        typer.echo(f"  STL:  {stl_path}")
+    except Exception as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
