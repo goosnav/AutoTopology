@@ -227,4 +227,4 @@ ruff format .
 
 ## License
 
-[To be determined]
+MIT License, Copyright 2026 Goosnav LLC
