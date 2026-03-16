@@ -1,0 +1,4 @@
+# file: /Users/jbs/Desktop/dev_code/AutoTopology/dev_cli.py
+# hypothesis_version: 6.151.9
+
+[1024, '--config', '--family', '--mesh', '--model', '--models-dir', '--output-dir', '--project-dir', '--seed', '--version', '-V', '-c', '-f', '-m', '-o', '-s', '.', 'No models found.', 'OK', 'Show version', '__main__', 'autotopology-cli', 'cleanup-cache', 'export-candidate', 'models', 'moondream2', 'resume-project', 'run-generation-once', 'run-project', 'run-smoke-test', 'score-candidate-once', 'table_family', 'test-model-inference', 'train-taste-model']
