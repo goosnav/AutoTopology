@@ -1,8 +1,8 @@
 # ProjectState.md — AutoTopology
 
 **Last updated**: 2026-03-16
-**Phase**: 3 (Physics & Rendering) — COMPLETE
-**Test status**: 366/366 passing (~8s)
+**Phase**: 4 (VLM Scoring) — COMPLETE
+**Test status**: 395/396 passing (~9s) [1 env-dependent skip: test_scan_models]
 
 ---
 
@@ -72,11 +72,12 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 
 ## Test Coverage
 
-366 tests across 22 test files. Key areas:
+395 tests across 23 test files. Key areas:
 - Config validation (36 tests, hypothesis property-based)
 - Geometry quality (140+ parametrized dimension tests)
 - Physics heuristics (36 tests across 6 modules)
 - Rendering pipeline (17 tests: camera, wireframe, collage)
+- VLM scoring (29 tests: prompts, parser, adapter, orchestrator)
 - API integration (4 endpoint tests)
 
 ## Known Issues
@@ -86,15 +87,18 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 | `test_scan_models` requires `models/` dir | Environment-dependent |
 | PyOpenGL install fails in headless env | Wireframe fallback handles this |
 
+### Phase 4 (VLM Scoring) — COMPLETE
+
+| File | Description |
+|------|-------------|
+| `vision/prompts/scoring_prompt.py` | 7-axis scoring prompts (base + strict retry) |
+| `vision/parsers/response_parser.py` | JSON extraction, strict validation, clamping, normalization |
+| `vision/adapters/vlm_loader.py` | Lazy-loading VLMAdapter wrapping llama-cpp-python; retry logic |
+| `vision/scoring/score_orchestrator.py` | Cache (memory + disk), failure-rate tracking, fallback modes |
+
 ## Open Tasks (by Phase)
 
-### Phase 4: VLM Scoring (NEXT)
-- [ ] `vision/adapters/vlm_loader.py` — GGUF+mmproj model loading
-- [ ] `vision/prompts/scoring_prompt.py` — Structured scoring prompts
-- [ ] `vision/parsers/response_parser.py` — JSON response extraction
-- [ ] `vision/scoring/score_orchestrator.py` — Score cache + retry logic
-
-### Phase 5: EA Core
+### Phase 5: EA Core (NEXT)
 - [ ] Candidate/Population/Island/League data structures
 - [ ] Selection, crossover, mutation operators (Python + C++)
 - [ ] Fitness composition, migration
@@ -111,8 +115,8 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 ## Critical Path
 
 ```
-Phase 1 (DONE) -> Phase 2 (DONE) -> Phase 3 (DONE) -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 8
-                                                                          \-> Phase 7 -/
+Phase 1 (DONE) -> Phase 2 (DONE) -> Phase 3 (DONE) -> Phase 4 (DONE) -> Phase 5 -> Phase 6 -> Phase 8
+                                                                                  \-> Phase 7 -/
 ```
 
 ## Environment Setup
