@@ -132,10 +132,37 @@ def generate_candidate_once(
 
 @app.command()
 def render_candidate_once(
-    mesh: Optional[Path] = typer.Option(None, "--mesh"),
+    family: str = typer.Option("table_family", "--family", "-f"),
+    seed: int = typer.Option(42, "--seed", "-s"),
+    output_dir: Path = typer.Option(Path("."), "--output-dir", "-o"),
+    resolution: int = typer.Option(512, "--resolution", "-r"),
 ):
-    """Render a candidate mesh to a 4-view collage."""
-    _stub("render-candidate-once")
+    """Render a candidate mesh to a 4-view collage PNG."""
+    import random as _random
+    from core.genome.catalog_registry import get_catalog
+    from core.genome.genome import Genome
+    from geometry.generators.generator_registry import generate_mesh
+    from vision.collage.collage import render_and_save_collage
+
+    try:
+        catalog = get_catalog(family)
+        rng = _random.Random(seed)
+        genome = Genome.random_init(catalog, rng)
+        mesh = generate_mesh(genome)
+
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        out_path = output_dir / f"{genome.genome_id}_collage.png"
+
+        render_and_save_collage(
+            mesh, out_path,
+            resolution_per_view=(resolution, resolution),
+        )
+        typer.echo(f"Rendered collage for {family} candidate: {genome.genome_id}")
+        typer.echo(f"  PNG: {out_path}")
+    except Exception as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()

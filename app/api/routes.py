@@ -6,7 +6,7 @@ import random
 from typing import Optional
 
 from fastapi import APIRouter, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 
 from app.__version__ import __app_name__, __version__
 
@@ -56,7 +56,9 @@ async def root():
         <div class="links">
             <a href="/docs">API Docs</a>
             <a href="/health">Health Check</a>
-            <a href="/api/generate">Generate Sample</a>
+            <a href="/api/generate">Generate</a>
+            <a href="/api/evaluate-physics">Physics</a>
+            <a href="/api/render-collage">Render</a>
         </div>
     </div>
 </body>
@@ -132,3 +134,37 @@ async def evaluate_physics_endpoint(
         "sub_scores": result.sub_scores,
         "failure_reasons": result.failure_reasons,
     }
+
+
+@router.get("/api/render-collage")
+async def render_collage_endpoint(
+    family: str = Query("table_family", description="Furniture family"),
+    seed: Optional[int] = Query(None, description="Random seed (omit for random)"),
+    resolution: int = Query(256, description="Resolution per view in pixels"),
+):
+    """Generate a candidate and return its 4-view collage as PNG."""
+    from io import BytesIO
+    from core.genome.catalog_registry import get_catalog
+    from core.genome.genome import Genome
+    from geometry.generators.generator_registry import generate_mesh
+    from vision.collage.collage import render_collage
+
+    if seed is None:
+        seed = random.randint(0, 2**31 - 1)
+
+    catalog = get_catalog(family)
+    rng = random.Random(seed)
+    genome = Genome.random_init(catalog, rng)
+    mesh = generate_mesh(genome)
+
+    collage = render_collage(mesh, resolution_per_view=(resolution, resolution))
+
+    buf = BytesIO()
+    collage.save(buf, format="PNG")
+    buf.seek(0)
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={"X-Genome-ID": genome.genome_id, "X-Seed": str(seed)},
+    )
