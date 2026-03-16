@@ -114,3 +114,10 @@ wandb/
 
 .cache/
 *.cache
+
+############################
+# Test artifacts
+############################
+
+.hypothesis/
+.pytest_cache/
