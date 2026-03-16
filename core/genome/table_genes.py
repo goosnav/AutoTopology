@@ -1,0 +1,70 @@
+"""Gene catalog for the table family."""
+
+from core.genome.gene_types import GeneSpec, GeneType
+
+TABLE_GENE_CATALOG: list[GeneSpec] = [
+    # --- Layer 1: Family / Archetype ---
+    GeneSpec("family_name", GeneType.CATEGORICAL, layer=1,
+             categories=["table_family"], default="table_family"),
+    GeneSpec("subtype", GeneType.CATEGORICAL, layer=1,
+             categories=["dining", "coffee", "side", "console", "desk"],
+             default="dining"),
+    GeneSpec("topology_family", GeneType.CATEGORICAL, layer=1,
+             categories=["skeletal", "monolithic", "hybrid"],
+             default="skeletal"),
+    GeneSpec("symmetry_mode", GeneType.CATEGORICAL, layer=1,
+             categories=["bilateral", "radial", "none"],
+             default="bilateral"),
+    GeneSpec("support_strategy", GeneType.CATEGORICAL, layer=1,
+             categories=["corner", "pedestal", "trestle", "cantilever"],
+             default="corner"),
+    GeneSpec("decorative_bias", GeneType.CONTINUOUS, layer=1,
+             min_val=0.0, max_val=1.0, default=0.3),
+    GeneSpec("monolithic_ratio", GeneType.CONTINUOUS, layer=1,
+             min_val=0.0, max_val=1.0, default=0.0),
+
+    # --- Layer 2: Structural Graph ---
+    GeneSpec("support_count", GeneType.INTEGER, layer=2,
+             min_val=1, max_val=8, default=4),
+    GeneSpec("branch_depth", GeneType.INTEGER, layer=2,
+             min_val=0, max_val=3, default=0),
+    GeneSpec("brace_count", GeneType.INTEGER, layer=2,
+             min_val=0, max_val=6, default=0),
+    GeneSpec("connectivity_density", GeneType.CONTINUOUS, layer=2,
+             min_val=0.0, max_val=1.0, default=0.3),
+
+    # --- Layer 3: Continuous Shape ---
+    GeneSpec("width", GeneType.CONTINUOUS, layer=3,
+             min_val=200.0, max_val=2000.0, default=800.0),
+    GeneSpec("depth", GeneType.CONTINUOUS, layer=3,
+             min_val=200.0, max_val=1500.0, default=600.0),
+    GeneSpec("height", GeneType.CONTINUOUS, layer=3,
+             min_val=200.0, max_val=1200.0, default=750.0),
+    GeneSpec("top_thickness", GeneType.CONTINUOUS, layer=3,
+             min_val=5.0, max_val=80.0, default=25.0),
+    GeneSpec("member_thickness", GeneType.CONTINUOUS, layer=3,
+             min_val=8.0, max_val=120.0, default=40.0),
+    GeneSpec("support_angle", GeneType.CONTINUOUS, layer=3,
+             min_val=0.0, max_val=30.0, default=0.0),
+    GeneSpec("taper_ratio", GeneType.CONTINUOUS, layer=3,
+             min_val=0.5, max_val=1.5, default=1.0),
+    GeneSpec("curve_bias", GeneType.CONTINUOUS, layer=3,
+             min_val=0.0, max_val=1.0, default=0.0),
+    GeneSpec("footprint_inset", GeneType.CONTINUOUS, layer=3,
+             min_val=0.0, max_val=0.4, default=0.05),
+    GeneSpec("fillet_radius", GeneType.CONTINUOUS, layer=3,
+             min_val=0.0, max_val=20.0, default=2.0),
+
+    # --- Layer 4: Optional Surface ---
+    GeneSpec("perforation_flag", GeneType.BOOLEAN, layer=4, default=False),
+    GeneSpec("perforation_density", GeneType.CONTINUOUS, layer=4,
+             min_val=0.0, max_val=1.0, default=0.0),
+    GeneSpec("cutout_intensity", GeneType.CONTINUOUS, layer=4,
+             min_val=0.0, max_val=1.0, default=0.0),
+    GeneSpec("ribbing_intensity", GeneType.CONTINUOUS, layer=4,
+             min_val=0.0, max_val=1.0, default=0.0),
+    GeneSpec("asymmetry_offset_x", GeneType.CONTINUOUS, layer=4,
+             min_val=-0.2, max_val=0.2, default=0.0),
+    GeneSpec("asymmetry_offset_y", GeneType.CONTINUOUS, layer=4,
+             min_val=-0.2, max_val=0.2, default=0.0),
+]
