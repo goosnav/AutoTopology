@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from app.__version__ import __app_name__, __version__
+from app.api.routes import router
 
 app = FastAPI(
     title=__app_name__,
@@ -28,6 +29,9 @@ app.add_middleware(
 ui_assets_path = Path(__file__).parent.parent / "ui_assets"
 if ui_assets_path.is_dir():
     app.mount("/static", StaticFiles(directory=str(ui_assets_path)), name="static")
+
+# Include API routes
+app.include_router(router)
 
 
 @app.get("/health")
