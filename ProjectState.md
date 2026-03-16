@@ -1,8 +1,8 @@
 # ProjectState.md — AutoTopology
 
 **Last updated**: 2026-03-16
-**Phase**: 4 (VLM Scoring) — COMPLETE
-**Test status**: 395/396 passing (~9s) [1 env-dependent skip: test_scan_models]
+**Phase**: 5 (EA Core) — COMPLETE
+**Test status**: 449/450 passing (~6s) [1 env-dependent skip: test_scan_models]
 
 ---
 
@@ -72,12 +72,13 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 
 ## Test Coverage
 
-395 tests across 23 test files. Key areas:
+449 tests across 24 test files. Key areas:
 - Config validation (36 tests, hypothesis property-based)
 - Geometry quality (140+ parametrized dimension tests)
 - Physics heuristics (36 tests across 6 modules)
 - Rendering pipeline (17 tests: camera, wireframe, collage)
 - VLM scoring (29 tests: prompts, parser, adapter, orchestrator)
+- EA core (54 tests: candidate, novelty, selection, mutation, crossover, repair, archive, island, league, engine)
 - API integration (4 endpoint tests)
 
 ## Known Issues
@@ -86,6 +87,21 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 |-------|--------|
 | `test_scan_models` requires `models/` dir | Environment-dependent |
 | PyOpenGL install fails in headless env | Wireframe fallback handles this |
+
+### Phase 5 (EA Core) — COMPLETE
+
+| File | Description |
+|------|-------------|
+| `core/evolution/candidate.py` | Candidate dataclass: genome + scores + human boost + serialisation |
+| `core/novelty/novelty.py` | Normalised genome distance + k-NN novelty scoring |
+| `core/selection/selection.py` | Tournament select, select_parents, get_elites (valid-only) |
+| `core/mutation/mutation.py` | Per-gene mutation: Gaussian (cont), ±1 (int), random choice (cat), flip (bool) |
+| `core/crossover/crossover.py` | Uniform + single-point crossover; family compatibility check |
+| `core/repair/repair.py` | Clamp, fix invalid categoricals, fill missing genes |
+| `core/map_elites/archive.py` | MAP-Elites archive; range-normalised float binning; diversity preservation |
+| `core/leagues/island.py` | Island: elitism + offspring loop + migration API |
+| `core/leagues/league.py` | League: ring migration, leaderboard across islands |
+| `core/evolution/engine.py` | EvolutionEngine: multi-league run loop + callback + best_candidates |
 
 ### Phase 4 (VLM Scoring) — COMPLETE
 
@@ -98,10 +114,11 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 
 ## Open Tasks (by Phase)
 
-### Phase 5: EA Core (NEXT)
-- [ ] Candidate/Population/Island/League data structures
-- [ ] Selection, crossover, mutation operators (Python + C++)
-- [ ] Fitness composition, migration
+### Phase 6: UI & Review Loop (NEXT)
+- [ ] WebSocket for live updates
+- [ ] Gallery endpoint / paged candidate listing
+- [ ] Review mode: top-K selection + pairwise tiebreaks
+- [ ] Browser frontend (minimal)
 
 ### Phase 6: UI & Review Loop
 - [ ] WebSocket for live updates, gallery, review mode, browser frontend
@@ -115,8 +132,8 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 ## Critical Path
 
 ```
-Phase 1 (DONE) -> Phase 2 (DONE) -> Phase 3 (DONE) -> Phase 4 (DONE) -> Phase 5 -> Phase 6 -> Phase 8
-                                                                                  \-> Phase 7 -/
+Phase 1 (DONE) -> Phase 2 (DONE) -> Phase 3 (DONE) -> Phase 4 (DONE) -> Phase 5 (DONE) -> Phase 6 -> Phase 8
+                                                                                            \-> Phase 7 -/
 ```
 
 ## Environment Setup
