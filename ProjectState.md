@@ -1,8 +1,8 @@
 # ProjectState.md — AutoTopology
 
-**Last updated**: 2026-03-16
-**Phase**: 5 (EA Core) — COMPLETE
-**Test status**: 449/450 passing (~6s) [1 env-dependent skip: test_scan_models]
+**Last updated**: 2026-03-24
+**Phase**: 6 (UI & Review Loop) — COMPLETE
+**Test status**: 504/505 passing (~7s) [1 env-dependent fail: test_scan_models]
 
 ---
 
@@ -72,7 +72,7 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 
 ## Test Coverage
 
-449 tests across 24 test files. Key areas:
+504 tests across 25 test files. Key areas:
 - Config validation (36 tests, hypothesis property-based)
 - Geometry quality (140+ parametrized dimension tests)
 - Physics heuristics (36 tests across 6 modules)
@@ -87,6 +87,21 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 |-------|--------|
 | `test_scan_models` requires `models/` dir | Environment-dependent |
 | PyOpenGL install fails in headless env | Wireframe fallback handles this |
+
+### Phase 6 (UI & Review Loop) — COMPLETE
+
+| File | Description |
+|------|-------------|
+| `app/api/state.py` | Shared singleton state (run_session, gallery, review, export services) |
+| `app/services/run_session.py` | RunSession state machine (IDLE/RUNNING/PAUSED/STOPPED) + review boundary |
+| `app/services/gallery_service.py` | Filter / sort / page candidates by physics, novelty, aesthetic, generation, etc. |
+| `app/services/review_service.py` | Top-K human selection (boosts scores) + pairwise preference recording |
+| `preference/persistence/preference_store.py` | JSONL append-only pairwise dataset; persists across sessions |
+| `app/services/export_service.py` | Export candidate metadata JSON + best-effort STL |
+| `app/api/run_routes.py` | POST /api/run/{start,pause,resume,stop,step}, GET /api/run/status |
+| `app/api/gallery_routes.py` | GET /api/gallery, GET /api/candidate/{id} |
+| `app/api/review_routes.py` | POST /api/review/select, /pairwise; GET /api/review/shortlist |
+| `app/api/export_routes.py` | POST /api/export/{candidate_id} |
 
 ### Phase 5 (EA Core) — COMPLETE
 
@@ -114,11 +129,11 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 
 ## Open Tasks (by Phase)
 
-### Phase 6: UI & Review Loop (NEXT)
-- [ ] WebSocket for live updates
-- [ ] Gallery endpoint / paged candidate listing
-- [ ] Review mode: top-K selection + pairwise tiebreaks
-- [ ] Browser frontend (minimal)
+### Phase 7: Taste Model (NEXT)
+- [ ] Pairwise feature extraction (genome features + VLM scores)
+- [ ] Train lightweight scikit-learn ranking model
+- [ ] Inject taste_bonus into Candidate scoring
+- [ ] Graceful fallback when model unavailable
 
 ### Phase 6: UI & Review Loop
 - [ ] WebSocket for live updates, gallery, review mode, browser frontend
@@ -132,8 +147,8 @@ family-specific generators (table/lamp/chair), mesh validation, STL export,
 ## Critical Path
 
 ```
-Phase 1 (DONE) -> Phase 2 (DONE) -> Phase 3 (DONE) -> Phase 4 (DONE) -> Phase 5 (DONE) -> Phase 6 -> Phase 8
-                                                                                            \-> Phase 7 -/
+Phase 1 (DONE) -> Phase 2 (DONE) -> Phase 3 (DONE) -> Phase 4 (DONE) -> Phase 5 (DONE) -> Phase 6 (DONE) -> Phase 8
+                                                                                                             \-> Phase 7 -/
 ```
 
 ## Environment Setup

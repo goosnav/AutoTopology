@@ -9,6 +9,10 @@ from pathlib import Path
 
 from app.__version__ import __app_name__, __version__
 from app.api.routes import router
+from app.api.run_routes import router as run_router
+from app.api.gallery_routes import router as gallery_router
+from app.api.review_routes import router as review_router
+from app.api.export_routes import router as export_router
 
 app = FastAPI(
     title=__app_name__,
@@ -32,6 +36,10 @@ if ui_assets_path.is_dir():
 
 # Include API routes
 app.include_router(router)
+app.include_router(run_router)
+app.include_router(gallery_router)
+app.include_router(review_router)
+app.include_router(export_router)
 
 
 @app.get("/health")
